@@ -24,7 +24,6 @@ from pygments_lexer_solidity import SolidityLexer, YulLexer
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
 ROOT_PATH = os.path.dirname(os.path.realpath(__file__))
-
 sys.path.insert(0, os.path.join(ROOT_PATH, 'ext'))
 
 def setup(sphinx):
@@ -68,6 +67,16 @@ master_doc = 'index'
 # General information about the project.
 project = 'Solidity'
 project_copyright = '2016-2023, The Solidity Authors'
+
+# Set canonical URL from the Read the Docs Domain
+html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "https://docs.soliditylang.org")
+
+# See:
+# https://github.com/readthedocs/readthedocs.org/blob/0c92505a6d42d04ad4a0726a4f898c898c0a24d1/docs/dev/design/theme-context.rst#L98
+# Tell Jinja2 templates the build is running on Read the Docs
+html_context = {
+    'READTHEDOCS': True,
+}
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
