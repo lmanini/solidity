@@ -39,7 +39,7 @@
 #include <libsolutil/Whiskers.h>
 #include <libsolutil/JSON.h>
 
-#include <range/v3/algorithm/all_of.hpp>
+#include <range/v3/algorithm/none_of.hpp>
 
 #include <sstream>
 #include <variant>
@@ -103,14 +103,15 @@ std::string IRGenerator::generate(
 	std::map<ContractDefinition const*, std::string_view const> const& _otherYulSources
 )
 {
-	auto notTransient = [](VariableDeclaration const* _varDeclaration) {
+	auto isTransientReferenceType = [](VariableDeclaration const* _varDeclaration) {
 		solAssert(_varDeclaration);
-		return _varDeclaration->referenceLocation() != VariableDeclaration::Location::Transient;
+		return _varDeclaration->referenceLocation() == VariableDeclaration::Location::Transient &&
+			!_varDeclaration->type()->isValueType();
 	};
 
 	solUnimplementedAssert(
-		ranges::all_of(_contract.stateVariables(), notTransient),
-		"Transient storage variables are not supported."
+		ranges::none_of(_contract.stateVariables(), isTransientReferenceType),
+		"Transient storage variables of reference type are not supported."
 	);
 
 	auto subObjectSources = [&_otherYulSources](UniqueVector<ContractDefinition const*> const& _subObjects) -> std::string
@@ -834,7 +835,6 @@ std::string IRGenerator::initStateVariables(ContractDefinition const& _contract)
 	IRGeneratorForStatements generator{m_context, m_utils, m_optimiserSettings};
 	for (VariableDeclaration const* variable: _contract.stateVariables())
 	{
-		solUnimplementedAssert(variable->referenceLocation() != VariableDeclaration::Location::Transient, "Transient storage variables not supported.");
 		if (!variable->isConstant())
 			generator.initializeStateVar(*variable);
 	}
