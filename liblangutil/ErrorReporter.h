@@ -124,10 +124,16 @@ public:
 
 	void clear();
 
-	/// @returns true iff there is any error (ignores warnings and infos).
+	/// @returns true if there is any error (ignores warnings and infos).
 	bool hasErrors() const
 	{
 		return m_errorCount > 0;
+	}
+
+	/// @returns true if there is any error, warning or info.
+	bool hasErrorsWarningsOrInfos() const
+	{
+		return m_errorCount + m_warningCount + m_infoCount > 0;
 	}
 
 	/// @returns the number of errors (ignores warnings and infos).
