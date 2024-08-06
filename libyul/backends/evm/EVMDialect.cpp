@@ -33,9 +33,6 @@
 #include <libyul/Utilities.h>
 #include <libyul/backends/evm/AbstractAssembly.h>
 
-#include <range/v3/view/reverse.hpp>
-#include <range/v3/view/tail.hpp>
-
 #include <regex>
 
 using namespace std::string_literals;
@@ -460,6 +457,13 @@ BuiltinFunctionForEVM const* EVMDialect::verbatimFunction(size_t _arguments, siz
 		function = std::make_shared<BuiltinFunctionForEVM const>(std::move(builtinFunction));
 	}
 	return function.get();
+}
+
+std::set<std::string> EVMDialect::builtinNames() const {
+	std::set<std::string> builtins{"verbatim"};
+	for (auto const& [key, _]: m_functions)
+		builtins.insert(key.str());
+	return builtins;
 }
 
 EVMDialectTyped::EVMDialectTyped(langutil::EVMVersion _evmVersion, bool _objectAccess):
