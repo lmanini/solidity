@@ -675,7 +675,7 @@ std::string IRGenerator::generateGetter(VariableDeclaration const& _varDecl)
 					<ret> := <readStorage>(add(slot, <slotOffset>))
 				)")
 				("ret", joinHumanReadable(retVars))
-				("readStorage", m_utils.readFromStorage(*returnTypes[i], offsets.second, true))
+				("readStorage", m_utils.readFromStorage(*returnTypes[i], offsets.second, true, VariableDeclaration::Location::Unspecified))
 				("slotOffset", offsets.first.str())
 				.render();
 			}
@@ -692,7 +692,7 @@ std::string IRGenerator::generateGetter(VariableDeclaration const& _varDecl)
 				<ret> := <readStorage>(slot, offset)
 			)")
 			("ret", joinHumanReadable(retVars))
-			("readStorage", m_utils.readFromStorageDynamic(*returnTypes.front(), true))
+			("readStorage", m_utils.readFromStorageDynamic(*returnTypes.front(), true, VariableDeclaration::Location::Unspecified))
 			.render();
 		}
 
