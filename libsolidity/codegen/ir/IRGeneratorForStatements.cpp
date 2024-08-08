@@ -3066,41 +3066,31 @@ void IRGeneratorForStatements::appendAndOrOperatorCode(BinaryOperation const& _b
 
 void IRGeneratorForStatements::writeToLValue(IRLValue const& _lvalue, IRVariable const& _value)
 {
+	auto const& storageVisitor = [&](IRLValue::Storage const& _storage, VariableDeclaration::Location _location) {
+		std::string offsetArgument;
+		std::optional<unsigned> offsetStatic;
+
+		std::visit(GenericVisitor{
+			[&](unsigned _offset) { offsetStatic = _offset; },
+			[&](std::string const& _offset) { offsetArgument = ", " + _offset; }
+		}, _storage.offset);
+
+		appendCode() <<
+			m_utils.updateStorageValueFunction(_value.type(), _lvalue.type, _location, offsetStatic) <<
+			"(" <<
+			_storage.slot <<
+			offsetArgument <<
+			_value.commaSeparatedListPrefixed() <<
+			")\n";
+	};
+
 	std::visit(
 		util::GenericVisitor{
 			[&](IRLValue::Storage const& _storage) {
-				std::string offsetArgument;
-				std::optional<unsigned> offsetStatic;
-
-				std::visit(GenericVisitor{
-					[&](unsigned _offset) { offsetStatic = _offset; },
-					[&](std::string const& _offset) { offsetArgument = ", " + _offset; }
-				}, _storage.offset);
-
-				appendCode() <<
-					m_utils.updateStorageValueFunction(_value.type(), _lvalue.type, VariableDeclaration::Location::Unspecified, offsetStatic) <<
-					"(" <<
-					_storage.slot <<
-					offsetArgument <<
-					_value.commaSeparatedListPrefixed() <<
-					")\n";
+				storageVisitor(_storage, VariableDeclaration::Location::Unspecified);
 			},
 			[&](IRLValue::TransientStorage const& _transientStorage) {
-				std::string offsetArgument;
-				std::optional<unsigned> offsetStatic;
-
-				std::visit(GenericVisitor{
-					[&](unsigned _offset) { offsetStatic = _offset; },
-					[&](std::string const& _offset) { offsetArgument = ", " + _offset; }
-				}, _transientStorage.offset);
-
-				appendCode() <<
-					m_utils.updateStorageValueFunction(_value.type(), _lvalue.type, VariableDeclaration::Location::Transient, offsetStatic) <<
-					"(" <<
-					_transientStorage.slot <<
-					offsetArgument <<
-					_value.commaSeparatedListPrefixed() <<
-					")\n";
+				storageVisitor(_transientStorage, VariableDeclaration::Location::Transient);
 			},
 			[&](IRLValue::Memory const& _memory) {
 				if (_lvalue.type.isValueType())
@@ -3173,42 +3163,31 @@ void IRGeneratorForStatements::writeToLValue(IRLValue const& _lvalue, IRVariable
 IRVariable IRGeneratorForStatements::readFromLValue(IRLValue const& _lvalue)
 {
 	IRVariable result{m_context.newYulVariable(), _lvalue.type};
+	auto const& storageVisitor = [&](IRLValue::Storage _storage, VariableDeclaration::Location _location) {
+		if (!_lvalue.type.isValueType())
+			define(result) << _storage.slot << "\n";
+		else if (std::holds_alternative<std::string>(_storage.offset))
+			define(result) <<
+				m_utils.readFromStorageDynamic(_lvalue.type, true, _location) <<
+				"(" <<
+				_storage.slot <<
+				", " <<
+				std::get<std::string>(_storage.offset) <<
+				")\n";
+		else
+			define(result) <<
+				m_utils.readFromStorage(_lvalue.type, std::get<unsigned>(_storage.offset), true, _location) <<
+				"(" <<
+				_storage.slot <<
+				")\n";
+	};
+
 	std::visit(GenericVisitor{
 		[&](IRLValue::Storage const& _storage) {
-			if (!_lvalue.type.isValueType())
-				define(result) << _storage.slot << "\n";
-			else if (std::holds_alternative<std::string>(_storage.offset))
-				define(result) <<
-					m_utils.readFromStorageDynamic(_lvalue.type, true, VariableDeclaration::Location::Unspecified) <<
-					"(" <<
-					_storage.slot <<
-					", " <<
-					std::get<std::string>(_storage.offset) <<
-					")\n";
-			else
-				define(result) <<
-					m_utils.readFromStorage(_lvalue.type, std::get<unsigned>(_storage.offset), true, VariableDeclaration::Location::Unspecified) <<
-					"(" <<
-					_storage.slot <<
-					")\n";
+			storageVisitor(_storage, VariableDeclaration::Location::Unspecified);
 		},
 		[&](IRLValue::TransientStorage const& _transientStorage) {
-			if (!_lvalue.type.isValueType())
-				define(result) << _transientStorage.slot << "\n";
-			else if (std::holds_alternative<std::string>(_transientStorage.offset))
-				define(result) <<
-					m_utils.readFromStorageDynamic(_lvalue.type, true, VariableDeclaration::Location::Transient) <<
-					"(" <<
-					_transientStorage.slot <<
-					", " <<
-					std::get<std::string>(_transientStorage.offset) <<
-					")\n";
-			else
-				define(result) <<
-					m_utils.readFromStorage(_lvalue.type, std::get<unsigned>(_transientStorage.offset), true, VariableDeclaration::Location::Transient) <<
-					"(" <<
-					_transientStorage.slot <<
-					")\n";
+			storageVisitor(_transientStorage, VariableDeclaration::Location::Transient);
 		},
 		[&](IRLValue::Memory const& _memory) {
 			if (_lvalue.type.isValueType())
