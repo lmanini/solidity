@@ -413,7 +413,7 @@ Json YulStack::astJson() const
 Json YulStack::cfgJson() const
 {
 	yulAssert(m_parserResult, "");
-	yulAssert(m_parserResult->code, "");
+	yulAssert(m_parserResult->hasCode(), "");
 	yulAssert(m_parserResult->analysisInfo, "");
 	// FIXME: we should not regenerate the cfg, but for now this is sufficient for testing purposes
 	auto exportCFGFromObject = [&](Object const& _object) -> Json {
@@ -421,7 +421,7 @@ Json YulStack::cfgJson() const
 		auto ssaCfg = SSAControlFlowGraphBuilder::build(
 			*_object.analysisInfo.get(),
 			languageToDialect(m_language, m_evmVersion),
-			*_object.code.get()
+			_object.code()->root()
 		);
 		YulControlFlowGraphExporter exporter(*ssaCfg);
 		//std::unique_ptr<CFG> cfg = ControlFlowGraphBuilder::build(
