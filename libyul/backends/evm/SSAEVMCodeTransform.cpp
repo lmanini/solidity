@@ -54,16 +54,13 @@ void debugPrintCFG(SSACFG const& _ssacfg, LivenessData const& _liveness) {
 					[&](SSACFG::UnreachableValue const&) -> std::string {
 						return "[unreachable]";
 					},
-					[&](SSACFG::PhiValue const&) {
-						return "p" + std::to_string(_var.value);
-					},
-					[&](SSACFG::VariableValue const&) {
-						return "v" + std::to_string(_var.value);
-					},
 					[&](SSACFG::LiteralValue const& _literal) {
 						std::stringstream str;
 						str << _literal.value;
 						return str.str();
+					},
+					[&](auto const&) {
+						return "v" + std::to_string(_var.value);
 					}
 				},
 				info
@@ -95,16 +92,6 @@ void debugPrintCFG(SSACFG const& _ssacfg, LivenessData const& _liveness) {
 								std::cout << util::joinHumanReadable(op.outputs | ranges::view::transform(varToString)) << " := ";
 
 							std::visit(util::GenericVisitor{
-/*										   [&](SSACFG::Phi const& _phi) {
-											   std::cout << "phi";
-											   std::cout << "(" << std::endl;
-											   yulAssert(_ssacfg.block(_phi.block).entries.size() == op.inputs.size());
-											   for (auto&& [entry, input]: ranges::zip_view(_ssacfg.block(_phi.block).entries, op.inputs))
-											   {
-												   std::cout << "    b" << entry.value << " => " << varToString(input) << std::endl;
-											   }
-											   std::cout << "  )" << std::endl;
-										   },*/
 										   [&](SSACFG::Call const& _call) {
 											   std::cout << _call.function.get().name.str();
 											   std::cout << "(";
