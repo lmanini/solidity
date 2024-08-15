@@ -8,7 +8,6 @@ contract D {
         x = -1;
         return this.x();
     }
-    
 }
 // ====
 // EVMVersion: >=cancun
